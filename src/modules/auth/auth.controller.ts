@@ -31,6 +31,37 @@ export const login = async (req: Request, res: Response) => {
   }
 };
 
+export const refresh = async (req: Request, res: Response) => {
+  try {
+    const refreshToken = req.cookies.refreshToken;
+
+    if (!refreshToken) {
+      return sendError(res, 'Refresh token manquant', 401);
+    }
+
+    const result = await authService.refreshAccessToken(refreshToken);
+
+    res.cookie('accessToken', result.accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 15 * 60 * 1000, // 15 min
+    });
+
+    res.cookie('refreshToken', result.refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+
+    sendSuccess(res, { message: 'Token refreshé' }, 200);
+  } catch (error: any) {
+    logger.error(error.message);
+    sendError(res, error.message, 401);
+  }
+};
+
 export const logout = async (req: Request, res: Response) => {
   try {
     res.clearCookie('accessToken');
