@@ -2,9 +2,9 @@ import { PrismaClient } from '@prisma/client';
 import { hashPassword } from '../src/utils/password';
 
 const prisma = new PrismaClient();
-
+const password = process.env.ADMIN_PASSWORD as string;
 async function main() {
-  console.log('🌱 Starting database seed...');
+  console.log('Starting database seed...');
 
   // Create admin user
   const adminUser = await prisma.user.upsert({
@@ -12,14 +12,14 @@ async function main() {
     update: {},
     create: {
       email: 'admin@kayak-en-re.fr',
-      password: await hashPassword('Admin@K-Re2026!'),
+      password: await hashPassword(password),
       name: 'Admin K-Ré',
       role: 'SUPER_ADMIN',
       isActive: true,
     },
   });
 
-  console.log(`✅ Admin user created: ${adminUser.email}`);
+  console.log(`Admin user created: ${adminUser.email}`);
 
   // Create sample activities
   const activities = [
@@ -78,10 +78,10 @@ async function main() {
       },
     });
 
-    console.log(`✅ Activity created: ${title}`);
+    console.log(`Activity created: ${title}`);
   }
 
-  console.log('🌱 Seed completed!');
+  console.log('Seed completed!');
 }
 
 main()

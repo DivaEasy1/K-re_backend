@@ -20,10 +20,10 @@ import activityRoutes from './modules/activities/activity.routes';
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT;
 
 const corsOptions = {
-  origin: [process.env.FRONTEND_URL || 'http://localhost:3000', process.env.ADMIN_URL || 'http://localhost:3001'],
+  origin: [process.env.FRONTEND_URL as string, process.env.ADMIN_URL as string],
   credentials: true,
 };
 
