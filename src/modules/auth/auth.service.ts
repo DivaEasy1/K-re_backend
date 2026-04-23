@@ -4,6 +4,7 @@ import {
   generateAccessToken,
   generateRefreshToken,
   storeRefreshToken,
+  hashToken,
   verifyRefreshToken,
   verifyAndDeleteRefreshToken,
   deleteAllRefreshTokens,
@@ -30,7 +31,7 @@ export class AuthService {
       throw new Error('Compte désactivé');
     }
 
-    // 🔒 Check lock
+    // Check lock
     if (user.lockedUntil && user.lockedUntil > new Date()) {
       throw new Error('Compte verrouillé. Essayez plus tard.');
     }
@@ -74,6 +75,7 @@ export class AuthService {
         email: user.email,
         name: user.name,
         role: user.role,
+        lastLoginAt: user.lastLoginAt,
       },
       accessToken,
       refreshToken,
@@ -146,6 +148,11 @@ export class AuthService {
   }
 
   async getCurrentUser(userId: string) {
+    await prisma.user.update({
+      where: { id: userId },
+      data: { lastActivityAt: new Date() },
+    });
+
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: {
@@ -153,6 +160,7 @@ export class AuthService {
         email: true,
         name: true,
         role: true,
+        lastLoginAt: true,
       },
     });
 
@@ -161,6 +169,27 @@ export class AuthService {
     }
 
     return user;
+  }
+
+  async logout(refreshToken?: string) {
+    if (!refreshToken) {
+      return;
+    }
+
+    const decoded = verifyRefreshToken(refreshToken);
+
+    if (!decoded) {
+      return;
+    }
+
+    const hashedToken = hashToken(refreshToken);
+
+    await prisma.refreshToken.deleteMany({
+      where: {
+        userId: decoded.userId,
+        token: hashedToken,
+      },
+    });
   }
 }
 

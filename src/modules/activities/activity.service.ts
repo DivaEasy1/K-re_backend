@@ -6,13 +6,12 @@ export class ActivityService {
   async createActivity(data: CreateActivityInput) {
     const slug = generateSlug(data.title);
 
-    // Check if slug already exists
     const existing = await prisma.activity.findUnique({
       where: { slug },
     });
 
     if (existing) {
-      throw new Error('Une activité avec ce titre existe déjà');
+      throw new Error('Une activite avec ce titre existe deja');
     }
 
     const activity = await prisma.activity.create({
@@ -25,19 +24,34 @@ export class ActivityService {
     return activity;
   }
 
-  async getActivities(filters?: { category?: string; isActive?: boolean }) {
-    const where: any = {
-      isActive: filters?.isActive !== undefined ? filters.isActive : true,
-    };
+  async getActivities(filters?: { category?: string; includeInactive?: boolean }) {
+    const where: any = filters?.includeInactive ? {} : { isActive: true };
 
     if (filters?.category) {
       where.category = filters.category;
     }
 
-    const activities = await prisma.activity.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
-    });
+    console.log('[activities] where clause:', JSON.stringify(where));
+
+    const [dbTotalCount, dbActiveCount, dbInactiveCount, activities] = await Promise.all([
+      prisma.activity.count(),
+      prisma.activity.count({ where: { isActive: true } }),
+      prisma.activity.count({ where: { isActive: false } }),
+      prisma.activity.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+      }),
+    ]);
+
+    console.log(
+      `[activities] db counts total=${dbTotalCount} active=${dbActiveCount} inactive=${dbInactiveCount}`
+    );
+    console.log(`[activities] query result count=${activities.length}`);
+    activities.forEach((activity) =>
+      console.log(
+        `  - ${activity.id}: ${activity.title} (isActive: ${activity.isActive}, image: ${activity.image ?? 'null'})`
+      )
+    );
 
     return activities;
   }
@@ -48,7 +62,7 @@ export class ActivityService {
     });
 
     if (!activity) {
-      throw new Error('Activité non trouvée');
+      throw new Error('Activite non trouvee');
     }
 
     return activity;
@@ -60,7 +74,7 @@ export class ActivityService {
     });
 
     if (!activity || !activity.isActive) {
-      throw new Error('Activité non trouvée');
+      throw new Error('Activite non trouvee');
     }
 
     return activity;
@@ -72,10 +86,10 @@ export class ActivityService {
     });
 
     if (!activity) {
-      throw new Error('Activité non trouvée');
+      throw new Error('Activite non trouvee');
     }
 
-    let updateData: any = { ...data };
+    const updateData: any = { ...data };
 
     if (data.title && data.title !== activity.title) {
       updateData.slug = generateSlug(data.title);
@@ -85,7 +99,7 @@ export class ActivityService {
       });
 
       if (existing && existing.id !== id) {
-        throw new Error('Une activité avec ce titre existe déjà');
+        throw new Error('Une activite avec ce titre existe deja');
       }
     }
 
@@ -103,16 +117,14 @@ export class ActivityService {
     });
 
     if (!activity) {
-      throw new Error('Activité non trouvée');
+      throw new Error('Activite non trouvee');
     }
 
-    // Soft delete
-    await prisma.activity.update({
+    await prisma.activity.delete({
       where: { id },
-      data: { isActive: false },
     });
 
-    return { message: 'Activité supprimée' };
+    return { message: 'Activite supprimee', id };
   }
 }
 

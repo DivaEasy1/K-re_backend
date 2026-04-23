@@ -1,4 +1,5 @@
 import express, { Request, Response, NextFunction } from 'express';
+import path from 'path';
 import helmet from 'helmet';
 import cors from 'cors';
 import compression from 'compression';
@@ -21,55 +22,68 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT;
+const BODY_LIMIT = process.env.BODY_LIMIT || '8mb';
+
+const allowedOrigins = [
+  process.env.FRONTEND_URL,
+  process.env.ADMIN_URL,
+  'http://localhost:3000',
+  'http://localhost:3001',
+  'http://localhost:3002',
+].filter(Boolean) as string[];
 
 const corsOptions = {
-  origin: [process.env.FRONTEND_URL as string, process.env.ADMIN_URL as string],
+  origin: allowedOrigins,
   credentials: true,
 };
 
-// Global rate limit: 100 requests per 15 minutes
 const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
-  message: 'Trop de requêtes, réessayez plus tard',
+  message: 'Trop de requetes, reessayez plus tard',
 });
 
-// ============= MIDDLEWARE =============
-app.use(helmet()); // Security headers
-app.use(compression()); // Gzip compression
-app.use(cors(corsOptions)); // CORS
-app.use(express.json({ limit: '10kb' })); // Body parser
-app.use(express.urlencoded({ extended: true, limit: '10kb' }));
-app.use(cookieParser()); // Cookie parser
-app.use(morgan('combined', { stream: { write: (msg) => logger.info(msg) } })); // Logger
-app.use(xss()); // XSS protection
-app.use(hpp()); // Parameter pollution protection
-app.use(generalLimiter); // Rate limiting
+app.use(
+  helmet({
+    crossOriginResourcePolicy: false,
+  })
+);
+app.use(compression());
+app.use(cors(corsOptions));
+app.use(express.json({ limit: BODY_LIMIT }));
+app.use(express.urlencoded({ extended: true, limit: BODY_LIMIT }));
+app.use(cookieParser());
+app.use(morgan('combined', { stream: { write: (msg) => logger.info(msg) } }));
+app.use(xss());
+app.use(hpp());
+app.use(generalLimiter);
 
-// ============= ROUTES =============
 app.get('/health', (req: Request, res: Response) => {
   sendSuccess(res, { status: 'ok', timestamp: new Date().toISOString() });
 });
 
+app.use('/uploads', (req: Request, res: Response, next: NextFunction) => {
+  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+  next();
+});
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+
 app.use('/api/auth', authRoutes);
 app.use('/api/activities', activityRoutes);
 
-// ============= 404 =============
 app.use((req: Request, res: Response) => {
   res.status(404).json({
     success: false,
-    error: 'Route non trouvée',
+    error: 'Route non trouvee',
   });
 });
 
-// ============= ERROR HANDLER =============
 app.use(errorMiddleware);
 
-// ============= START SERVER =============
 app.listen(PORT, () => {
-  logger.info(`✅ Server running on http://localhost:${PORT}`);
-  logger.info(`📊 Frontend CORS: ${process.env.FRONTEND_URL}`);
-  logger.info(`📊 Admin CORS: ${process.env.ADMIN_URL}`);
+  logger.info(`Server running on http://localhost:${PORT}`);
+  logger.info(`Frontend CORS: ${process.env.FRONTEND_URL}`);
+  logger.info(`Admin CORS: ${process.env.ADMIN_URL}`);
 });
 
 export default app;
