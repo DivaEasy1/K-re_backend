@@ -27,9 +27,6 @@ const BODY_LIMIT = process.env.BODY_LIMIT || '8mb';
 const allowedOrigins = [
   process.env.FRONTEND_URL,
   process.env.ADMIN_URL,
-  'http://localhost:3000',
-  'http://localhost:3001',
-  'http://localhost:3002',
 ].filter(Boolean) as string[];
 
 const corsOptions = {
