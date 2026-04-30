@@ -3,6 +3,8 @@ import multer from 'multer';
 import logger from '../config/logger';
 import { sendError } from '../utils/response';
 
+const isProduction = process.env.NODE_ENV === 'production';
+
 export const errorMiddleware = (
   err: any,
   req: Request,
@@ -32,5 +34,10 @@ export const errorMiddleware = (
     method: req.method,
   });
 
-  sendError(res, err.message || 'Erreur serveur', err.statusCode || 500);
+  // Sanitize error messages: hide 5xx details in production
+  const statusCode = err.statusCode || 500;
+  const clientMessage =
+    isProduction && statusCode >= 500 ? 'Erreur serveur' : err.message || 'Erreur serveur';
+
+  sendError(res, clientMessage, statusCode);
 };

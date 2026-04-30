@@ -12,6 +12,7 @@ import { authMiddleware, adminMiddleware } from '../../middleware/auth.middlewar
 import { validateMiddleware } from '../../middleware/validate.middleware';
 import { createActivitySchema, updateActivitySchema } from './activity.schema';
 import { activityImageUpload } from '../../middleware/upload.middleware';
+import { validateCSRFToken } from '../../middleware/csrf.middleware';
 
 const router = express.Router();
 
@@ -21,9 +22,9 @@ router.get('/slug/:slug', getActivityBySlug);
 router.get('/:id', getActivityById);
 
 // Admin routes
-router.post('/upload', authMiddleware, adminMiddleware, activityImageUpload.single('image'), uploadActivityImage);
-router.post('/', authMiddleware, adminMiddleware, validateMiddleware(createActivitySchema), createActivity);
-router.put('/:id', authMiddleware, adminMiddleware, validateMiddleware(updateActivitySchema), updateActivity);
-router.delete('/:id', authMiddleware, adminMiddleware, deleteActivity);
+router.post('/upload', authMiddleware, adminMiddleware, validateCSRFToken, activityImageUpload.single('image'), uploadActivityImage);
+router.post('/', authMiddleware, adminMiddleware, validateCSRFToken, validateMiddleware(createActivitySchema), createActivity);
+router.put('/:id', authMiddleware, adminMiddleware, validateCSRFToken, validateMiddleware(updateActivitySchema), updateActivity);
+router.delete('/:id', authMiddleware, adminMiddleware, validateCSRFToken, deleteActivity);
 
 export default router;
