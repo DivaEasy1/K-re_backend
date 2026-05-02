@@ -1,2 +1,2 @@
 -- AlterTable
-ALTER TABLE `user` ADD COLUMN `lastActivityAt` DATETIME(3) NULL;
+ALTER TABLE `User` ADD COLUMN `lastActivityAt` DATETIME(3) NULL;

@@ -21,7 +21,7 @@ import activityRoutes from './modules/activities/activity.routes';
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT;
+const PORT = process.env.PORT || 5000;
 const BODY_LIMIT = process.env.BODY_LIMIT || '8mb';
 
 const allowedOrigins = [
