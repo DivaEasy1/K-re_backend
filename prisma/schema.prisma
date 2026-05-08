@@ -33,6 +33,52 @@ enum Role {
   SUPER_ADMIN
 }
 
+enum StationStatus {
+  OPEN
+  COMING_SOON
+  CLOSED
+  MAINTENANCE
+}
+
+model Station {
+  id            String        @id @default(cuid())
+  name          String
+  slug          String        @unique
+  location      String
+  lat           Float
+  lng           Float
+  
+  description   String        @db.Text       
+  richContent   String?       @db.LongText    
+  
+  image         String?
+  imagePublicId String?
+  
+  gallery       StationImage[]
+  
+  status        StationStatus @default(COMING_SOON)
+  openYear      Int?
+  isActive      Boolean       @default(true)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([slug])
+  @@index([status])
+  @@index([isActive])
+}
+
+model StationImage {
+  id        String   @id @default(cuid())
+  station   Station  @relation(fields: [stationId], references: [id], onDelete: Cascade)
+  stationId String
+  url       String
+  alt       String   @default("")
+  position  Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([stationId])
+}
+
 model Activity {
   id              String   @id @default(cuid())
   title           String
@@ -47,6 +93,7 @@ model Activity {
   image           String?
   imagePublicId   String?
   maxParticipants Int      @default(10)
+
   isActive        Boolean  @default(true)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt

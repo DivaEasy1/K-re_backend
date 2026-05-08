@@ -17,6 +17,7 @@ import { sendSuccess } from './utils/response';
 
 import authRoutes from './modules/auth/auth.routes';
 import activityRoutes from './modules/activities/activity.routes';
+import stationRoutes from './modules/stations/station.routes';
 
 dotenv.config();
 
@@ -69,6 +70,7 @@ app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
 app.use('/api/auth', authRoutes);
 app.use('/api/activities', activityRoutes);
+app.use('/api/stations', stationRoutes);
 
 app.use((req: Request, res: Response) => {
   res.status(404).json({
