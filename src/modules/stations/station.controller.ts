@@ -19,7 +19,7 @@ export const createStation = async (req: AuthenticatedRequest, res: Response) =>
 
 export const getStations = async (req: Request, res: Response) => {
   try {
-    const stations = await stationService.getStations(true);
+    const stations = await stationService.getStations();
     res.set('Cache-Control', 'max-age=3600');
     sendSuccess(res, stations);
   } catch (error: any) {

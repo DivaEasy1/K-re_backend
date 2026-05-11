@@ -173,9 +173,8 @@ class StationService {
     return normalizeStationRecord(updatedStation);
   }
 
-  async getStations(isActive = true) {
+  async getStations() {
     const stations = await prisma.station.findMany({
-      where: { isActive },
       include: {
         gallery: { orderBy: { position: 'asc' } }
       },
@@ -208,9 +207,8 @@ class StationService {
   }
 
   async deleteStation(id: string) {
-    return prisma.station.update({
-      where: { id },
-      data: { isActive: false }
+    return prisma.station.delete({
+      where: { id }
     });
   }
 
