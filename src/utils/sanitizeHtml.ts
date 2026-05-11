@@ -3,21 +3,49 @@
  * Allows safe formatting tags and removes any scripts
  */
 
+const NAMED_ENTITY_MAP: Record<string, string> = {
+  amp: '&',
+  lt: '<',
+  gt: '>',
+  quot: '"',
+  apos: "'",
+  '#039': "'",
+  nbsp: ' ',
+};
+
+export function decodeHtmlEntities(value: string | null | undefined): string | null {
+  if (!value) {
+    return null;
+  }
+
+  return value.replace(/&(#x?[0-9a-f]+|[a-z]+);/gi, (match, entity) => {
+    const normalizedEntity = String(entity).toLowerCase();
+
+    if (normalizedEntity.startsWith('#x')) {
+      const codePoint = Number.parseInt(normalizedEntity.slice(2), 16);
+      return Number.isNaN(codePoint) ? match : String.fromCodePoint(codePoint);
+    }
+
+    if (normalizedEntity.startsWith('#')) {
+      const codePoint = Number.parseInt(normalizedEntity.slice(1), 10);
+      return Number.isNaN(codePoint) ? match : String.fromCodePoint(codePoint);
+    }
+
+    return NAMED_ENTITY_MAP[normalizedEntity] ?? match;
+  });
+}
+
 export function sanitizeHtml(html: string | null | undefined): string | null {
-  if (!html) return null;
+  const decodedHtml = decodeHtmlEntities(html);
+
+  if (!decodedHtml) return null;
 
   // Define allowed tags and attributes
-  const allowedTags = ['p', 'br', 'strong', 'b', 'em', 'i', 'u', 'h2', 'h3', 'ul', 'ol', 'li', 'a', 'blockquote'];
-  const allowedAttributes: Record<string, string[]> = {
-    a: ['href', 'title']
-  };
-
-  // Create a temporary container for parsing
-  const container = `<div>${html}</div>`;
+  const allowedTags = ['p', 'br', 'strong', 'b', 'em', 'i', 'u', 'h1', 'h2', 'h3', 'ul', 'ol', 'li', 'a', 'blockquote'];
   
   // Basic regex-based sanitization
   // Remove script tags and event handlers
-  let sanitized = html
+  let sanitized = decodedHtml
     .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
     .replace(/on\w+\s*=\s*["'][^"']*["']/gi, '')
     .replace(/on\w+\s*=\s*[^\s>]*/gi, '')

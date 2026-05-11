@@ -97,7 +97,8 @@ export const uploadStationImage = async (req: AuthenticatedRequest, res: Respons
       return sendError(res, 'Station ID manquant', 400);
     }
 
-    const imageUrl = `${req.protocol}://${req.get('host')}/uploads/stations/${req.file.filename}`;
+    const encodedFilename = encodeURIComponent(req.file.filename);
+    const imageUrl = `${req.protocol}://${req.get('host')}/uploads/stations/${encodedFilename}`;
     const image = await stationService.addGalleryImage(stationId, imageUrl, req.file.originalname);
     
     sendSuccess(res, image, 201);
@@ -165,7 +166,7 @@ export const uploadStationImages = async (req: AuthenticatedRequest, res: Respon
     }
 
     const images = (req.files as Express.Multer.File[]).map(file => ({
-      url: `${req.protocol}://${req.get('host')}/uploads/stations/${file.filename}`,
+      url: `${req.protocol}://${req.get('host')}/uploads/stations/${encodeURIComponent(file.filename)}`,
       alt: file.originalname.split('.')[0] // Use filename without extension as alt text
     }));
 

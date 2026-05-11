@@ -49,7 +49,8 @@ model Station {
   lng           Float
   
   description   String        @db.Text       
-  richContent   String?       @db.LongText    
+  richContent   String?       @db.LongText
+  equipment     Json?                         // Array of equipment types: ["kayak_solo", "kayak_tandem", "paddle"]
   
   image         String?
   imagePublicId String?
