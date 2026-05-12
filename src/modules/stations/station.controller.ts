@@ -20,7 +20,8 @@ export const createStation = async (req: AuthenticatedRequest, res: Response) =>
 export const getStations = async (req: Request, res: Response) => {
   try {
     const stations = await stationService.getStations();
-    res.set('Cache-Control', 'max-age=3600');
+    res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.set('X-Stations-Count', String(stations.length));
     sendSuccess(res, stations);
   } catch (error: any) {
     logger.error(error.message);
@@ -37,7 +38,7 @@ export const getStationBySlug = async (req: Request, res: Response) => {
       return sendError(res, 'Station non trouvée', 404);
     }
 
-    res.set('Cache-Control', 'max-age=3600');
+    res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
     sendSuccess(res, station);
   } catch (error: any) {
     logger.error(error.message);
@@ -82,7 +83,8 @@ export const deleteStation = async (req: AuthenticatedRequest, res: Response) =>
     sendSuccess(res, { message: 'Station supprimée' });
   } catch (error: any) {
     logger.error(error.message);
-    sendError(res, error.message, 500);
+    const statusCode = error.message === 'Station non trouvee' ? 404 : 500;
+    sendError(res, error.message, statusCode);
   }
 };
 

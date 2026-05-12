@@ -100,6 +100,7 @@ class StationService {
       slug,
       richContent: sanitizeHtml(data.richContent),
       image: normalizeAssetUrl(data.image) ?? null,
+      bookingUrl: normalizeAssetUrl(data.bookingUrl) ?? null,
       equipment: normalizeEquipmentValue(data.equipment)
     };
 
@@ -160,6 +161,10 @@ class StationService {
       updateData.image = normalizeAssetUrl(data.image) ?? null;
     }
 
+    if (Object.prototype.hasOwnProperty.call(data, 'bookingUrl')) {
+      updateData.bookingUrl = normalizeAssetUrl(data.bookingUrl) ?? null;
+    }
+
     if (Object.prototype.hasOwnProperty.call(data, 'equipment')) {
       updateData.equipment = normalizeEquipmentValue(data.equipment);
     }
@@ -178,7 +183,7 @@ class StationService {
       include: {
         gallery: { orderBy: { position: 'asc' } }
       },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: 'asc' }
     });
 
     return stations.map((station) => normalizeStationRecord(station));
@@ -207,9 +212,17 @@ class StationService {
   }
 
   async deleteStation(id: string) {
-    return prisma.station.delete({
-      where: { id }
-    });
+    try {
+      return await prisma.station.delete({
+        where: { id }
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+        throw new Error('Station non trouvee');
+      }
+
+      throw error;
+    }
   }
 
   async addGalleryImage(stationId: string, url: string, alt: string) {

@@ -13,6 +13,7 @@ export const CreateStationSchema = z.object({
   status: z.enum(['OPEN', 'COMING_SOON', 'CLOSED', 'MAINTENANCE']).default('COMING_SOON'),
   openYear: z.number().min(2020).max(2050).optional(),
   image: z.string().url().optional().nullable(),
+  bookingUrl: z.string().url().optional().nullable()
 });
 
 export const UpdateStationSchema = CreateStationSchema.partial();

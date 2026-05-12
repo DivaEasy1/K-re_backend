@@ -54,6 +54,7 @@ model Station {
   
   image         String?
   imagePublicId String?
+  bookingUrl    String?
   
   gallery       StationImage[]
   
