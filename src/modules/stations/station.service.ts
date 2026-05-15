@@ -43,6 +43,27 @@ function normalizeAssetUrl(value?: string | null) {
   }
 }
 
+function normalizePlainText(value?: string | null) {
+  if (typeof value !== 'string') {
+    return null;
+  }
+
+  const trimmed = value.trim();
+  return trimmed || null;
+}
+
+function normalizeStringArray(value?: string[] | null): string[] | null {
+  if (!Array.isArray(value)) {
+    return null;
+  }
+
+  const items = value
+    .map((item) => (typeof item === 'string' ? item.trim() : ''))
+    .filter(Boolean);
+
+  return items.length > 0 ? items : null;
+}
+
 function normalizeEquipmentValue(
   value: CreateStationInput['equipment'] | UpdateStationInput['equipment']
 ): Prisma.InputJsonValue | Prisma.NullableJsonNullValueInput | undefined {
@@ -57,10 +78,30 @@ function normalizeEquipmentValue(
   return value as Prisma.InputJsonValue;
 }
 
+function normalizeStringArrayValue(
+  value: string[] | null | undefined
+): Prisma.InputJsonValue | Prisma.NullableJsonNullValueInput | undefined {
+  if (typeof value === 'undefined') {
+    return undefined;
+  }
+
+  const normalized = normalizeStringArray(value);
+
+  if (!normalized) {
+    return Prisma.DbNull;
+  }
+
+  return normalized as Prisma.InputJsonValue;
+}
+
 function normalizeStationRecord<
   T extends {
     image?: string | null;
     richContent?: string | null;
+    highlight?: string | null;
+    ambience?: string | null;
+    practicalInfo?: unknown;
+    nearbyHighlights?: unknown;
     gallery?: Array<{ url: string }>;
   }
 >(station: T): T {
@@ -68,6 +109,10 @@ function normalizeStationRecord<
     ...station,
     image: normalizeAssetUrl(station.image) ?? null,
     richContent: sanitizeHtml(station.richContent),
+    highlight: normalizePlainText(station.highlight),
+    ambience: normalizePlainText(station.ambience),
+    practicalInfo: normalizeStringArray(station.practicalInfo as string[] | null | undefined),
+    nearbyHighlights: normalizeStringArray(station.nearbyHighlights as string[] | null | undefined),
     gallery: Array.isArray(station.gallery)
       ? station.gallery.map((image) => ({
           ...image,
@@ -86,7 +131,7 @@ class StationService {
     });
 
     if (existingSlug) {
-      throw new Error('Une station avec ce nom existe déjà');
+      throw new Error('Une station avec ce nom existe deja');
     }
 
     const createData: Prisma.StationCreateInput = {
@@ -99,6 +144,10 @@ class StationService {
       openYear: data.openYear,
       slug,
       richContent: sanitizeHtml(data.richContent),
+      highlight: normalizePlainText(data.highlight),
+      ambience: normalizePlainText(data.ambience),
+      practicalInfo: normalizeStringArrayValue(data.practicalInfo),
+      nearbyHighlights: normalizeStringArrayValue(data.nearbyHighlights),
       image: normalizeAssetUrl(data.image) ?? null,
       bookingUrl: normalizeAssetUrl(data.bookingUrl) ?? null,
       equipment: normalizeEquipmentValue(data.equipment)
@@ -122,7 +171,7 @@ class StationService {
       });
 
       if (existing && existing.id !== id) {
-        throw new Error('Une station avec ce nom existe déjà');
+        throw new Error('Une station avec ce nom existe deja');
       }
 
       updateData.name = data.name;
@@ -155,6 +204,22 @@ class StationService {
 
     if (Object.prototype.hasOwnProperty.call(data, 'richContent')) {
       updateData.richContent = sanitizeHtml(data.richContent);
+    }
+
+    if (Object.prototype.hasOwnProperty.call(data, 'highlight')) {
+      updateData.highlight = normalizePlainText(data.highlight);
+    }
+
+    if (Object.prototype.hasOwnProperty.call(data, 'ambience')) {
+      updateData.ambience = normalizePlainText(data.ambience);
+    }
+
+    if (Object.prototype.hasOwnProperty.call(data, 'practicalInfo')) {
+      updateData.practicalInfo = normalizeStringArrayValue(data.practicalInfo);
+    }
+
+    if (Object.prototype.hasOwnProperty.call(data, 'nearbyHighlights')) {
+      updateData.nearbyHighlights = normalizeStringArrayValue(data.nearbyHighlights);
     }
 
     if (Object.prototype.hasOwnProperty.call(data, 'image')) {
