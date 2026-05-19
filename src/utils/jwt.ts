@@ -7,6 +7,31 @@ const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN as string;
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET as string;
 const JWT_REFRESH_EXPIRES_IN = process.env.JWT_REFRESH_EXPIRES_IN as string;
 
+const parseDurationToMs = (duration: string): number => {
+  const match = /^([0-9]+)([smhd])$/i.exec(duration.trim());
+  if (!match) {
+    throw new Error(`Invalid duration format: ${duration}`);
+  }
+
+  const value = Number(match[1]);
+  const unit = match[2].toLowerCase();
+
+  switch (unit) {
+    case 's':
+      return value * 1000;
+    case 'm':
+      return value * 60 * 1000;
+    case 'h':
+      return value * 60 * 60 * 1000;
+    case 'd':
+      return value * 24 * 60 * 60 * 1000;
+    default:
+      throw new Error(`Unsupported duration unit: ${unit}`);
+  }
+};
+
+export const getJwtExpirationMs = (expiresIn: string): number => parseDurationToMs(expiresIn);
+
 // Hash token using SHA256
 export const hashToken = (token: string): string => {
   return createHash('sha256').update(token).digest('hex');
@@ -42,7 +67,7 @@ export const verifyRefreshToken = (token: string) => {
 
 export const storeRefreshToken = async (userId: string, token: string) => {
   const hashedToken = hashToken(token);
-  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+  const expiresAt = new Date(Date.now() + parseDurationToMs(JWT_REFRESH_EXPIRES_IN));
 
   // Delete old refresh tokens (token rotation)
   await prisma.refreshToken.deleteMany({

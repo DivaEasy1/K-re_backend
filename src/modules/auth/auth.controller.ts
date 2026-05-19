@@ -3,12 +3,17 @@ import authService from './auth.service';
 import { sendSuccess, sendError } from '../../utils/response';
 import { AuthenticatedRequest } from '../../types';
 import logger from '../../config/logger';
+import { getJwtExpirationMs } from '../../utils/jwt';
 
 const cookieOptions = {
   httpOnly: true,
   secure: process.env.NODE_ENV === 'production',
   sameSite: process.env.NODE_ENV === 'production' ? ('none' as const) : ('lax' as const),
 };
+
+const ACCESS_TOKEN_MAX_AGE = getJwtExpirationMs(process.env.JWT_EXPIRES_IN || '15m');
+const REFRESH_TOKEN_MAX_AGE = getJwtExpirationMs(process.env.JWT_REFRESH_EXPIRES_IN || '7d');
+
 
 export const login = async (req: Request, res: Response) => {
   try {
@@ -17,12 +22,12 @@ export const login = async (req: Request, res: Response) => {
 
     res.cookie('accessToken', result.accessToken, {
       ...cookieOptions,
-      maxAge: 15 * 60 * 1000,
+      maxAge: ACCESS_TOKEN_MAX_AGE,
     });
 
     res.cookie('refreshToken', result.refreshToken, {
       ...cookieOptions,
-      maxAge: 7 * 24 * 60 * 60 * 1000,
+      maxAge: REFRESH_TOKEN_MAX_AGE,
     });
 
     logger.info(`User ${email} logged in`);
@@ -51,12 +56,12 @@ export const refresh = async (req: Request, res: Response) => {
 
     res.cookie('accessToken', result.accessToken, {
       ...cookieOptions,
-      maxAge: 15 * 60 * 1000,
+      maxAge: ACCESS_TOKEN_MAX_AGE,
     });
 
     res.cookie('refreshToken', result.refreshToken, {
       ...cookieOptions,
-      maxAge: 7 * 24 * 60 * 60 * 1000,
+      maxAge: REFRESH_TOKEN_MAX_AGE,
     });
 
     sendSuccess(
